@@ -1,0 +1,3 @@
+load_system_dawg T
+load_freq_dawg T
+user_words_suffix my_wordlist.txt
