@@ -150,8 +150,26 @@
           },
           success: function(response){
             //$("#result").html(response);
-            //console.log(response);
-            $("#result").html(response.content);
+            console.log(response);
+
+            var x = response.content;
+            x = x.replace(/\u21B5/g, '\n');
+            console.log(x);
+            var content = x.split("\n");
+            console.log(content);
+            var html = "";
+            html += "<ul>";
+            for(var i in content){
+                var line = content[i];
+                if(line.length !== 0){
+                    html += "<li>";
+                    html += line;
+                    html += "</li>";
+                }
+            }
+            html += "</ul>";
+
+            $("#result").html(html);
           }
         });
       }
