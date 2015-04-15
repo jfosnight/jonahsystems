@@ -14,6 +14,7 @@
 
 
 import time
+import math
 
 ## Import Libraries that let python talk to I2C devices
 from smbus import SMBus
@@ -79,7 +80,7 @@ TEMP = 2000 + dT * C6 / 2**23
 ## I also included Fahrenheit for the rest of us normal people
 TEMP_F = TEMP/100.0 * 9.0/5 + 32
 
-print "Temperature: ", TEMP/100.0
+print "Temperature C: ", round(TEMP/100.0, 2)
 print "Temperature F: ", round(TEMP_F, 2)
 
 ## These calculations are all used to produce the final pressure value (just as before the Pressure value needs to be divided by 100 to shift the decimal place where it belongs.)
@@ -88,9 +89,21 @@ SENS = C1 * 2**15 + (C3 * dT) / 2**8
 P = (D1 * SENS / 2**21 - OFF) / 2**15
 
 
-print "Pressure: ", P/100.0
+print "Absolute Pressure: ", round(P/100.0, 2), "Millibars"
+
+
+## Calculate the offset for altitude
+hFt = 1299   ## ft
+h = hFt / 3.2808
+k = TEMP/100.0 + 273.15  ## Convert temp to kelvin
+x = ( -9.80665 * 0.0289644 * h ) / ( 8.31432 * k )
+offset = math.exp(x)
+pressure = P / offset
+
+print "Pressure: ", round(pressure/100.0, 2), "Millibars"
+print "Pressure: ", round(pressure/100.0 * 0.0295301, 2), "inHg"
 
 ## Now one curious thing I found was that the sensor needs to be adjusted to your current eleivation.  I couldn't find an automatic way to do it, but I did find
 #       this website with a chart. http://www.novalynx.com/manuals/bp-elevation-correction-tables.pdf
 #   Just replace the 55.5 below with whatever elevation is approapriate for you.
-print "Pressure Adjusted: ", round(P/100.0 + 55.5, 2)
+#print "Pressure Adjusted: ", round(P/100.0 + 55.5, 2)
