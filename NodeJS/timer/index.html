@@ -83,9 +83,18 @@
         <script src="/js/howler.min.js"></script>
 
         <script>
-        var socket = io.connect();
+        var socket = io.connect('', {
+            //timeout: 10,
+            //interval: 5,
+        });
         var timers = [];
         var alarm = new Howl({urls:['/audio/196106__aiwha__ding.wav']});
+
+        //io.set("heartbeat timeout", 10);
+        //io.set("heartbeat interval", 5);
+
+        //console.log(io.timeout);
+        //socket.timeout(5000);
         //console.log(timers);
 
         /*function displayTime(id, time){
@@ -139,6 +148,18 @@
                 timers[id].start();
             }
             //console.log(timers);
+        });
+
+        socket.on('connect', function(){
+            console.log("User is connected");
+        });
+
+        socket.on('disconnect', function(){
+            console.log("User was disconnected");
+        });
+
+        socket.on('reconnect', function(number){
+            console.log("User has reconnected");
         });
 
         function clearInput(id){
