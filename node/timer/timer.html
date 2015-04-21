@@ -1,0 +1,283 @@
+<!doctype html>
+<html>
+    <head>
+        <title>JFosnight Timers</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+        <link rel="stylesheet" href="http://cdn.jfosnight.net:3000/css/uikit.almost-flat.min.css" />
+        <link rel="stylesheet" href="http://cdn.jfosnight.net:3000/css/notify.almost-flat.min.css" />
+
+        <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+        <script src="http://cdn.jfosnight.net:3000/js/uikit.min.js"></script>
+        <script src="http://cdn.jfosnight.net:3000/js/notify.min.js"></script>
+
+        <style>
+        #content{
+            max-width: 600px;
+            margin: 10px;
+        }
+        html{
+            max-width: 600px;
+            margin: auto;
+        }
+        </style>
+    </head>
+    <body>
+        <div id='content'>
+            <br />
+            <h1>Timers</h1>
+
+            <div class=''>
+                <h3>Timer 1</h3>
+            </div>
+            <div class='uk-float-left' style='padding-left: 30px;'>
+                <h2>
+                    <span class='timer' data-timer-id='1'>00:00:00</span>
+                </h2>
+            </div>
+            <div class='uk-float-right'>
+                <form class='uk-form'>
+                    <!--<input type='number' class='timer-length uk-form' data-timer-id='1' value='' placeholder='length (seconds)' style='width: 150px; margin-right: 20px;'/>-->
+
+                    <input type='number' min='0' name='min' data-timer-id='1' value='' placeholder='min' style='width: 55px;' />
+                    <input type='number' min='0' max='59' name='sec' data-timer-id='1' value='' placeholder='sec' style='width: 55px;' />
+
+                    <button type='button' class='uk-button timer-btn-clear' data-timer-id='1' style='margin-right: 20px;'><i class='uk-icon-times'></i></button>
+
+                    <button type='button' class='timer-btn-start uk-button' data-timer-id='1'>Start</button>
+                    <button type='button' class='timer-btn-stop uk-button' data-timer-id='1'>Stop</button>
+                </form>
+            </div>
+
+            <div class='uk-clearfix'>
+
+            </div>
+            <br />
+            <br />
+            <br />
+
+            <h3>Timer 2</h3>
+            <div class='uk-float-left' style='padding-left: 30px;'>
+                <h2>
+                    <span class='timer' data-timer-id='2'>00:00:00</span>
+                </h2>
+            </div>
+
+            <div class='uk-float-right'>
+                <form class='uk-form'>
+                    <!--<input type='number' class='timer-length uk-form' data-timer-id='2' value='' placeholder='length (seconds)' style='width: 150px; margin-right: 20px;'/>-->
+
+                    <input type='number' min='0' name='min' data-timer-id='2' value='' placeholder='min' style='width: 55px;' />
+                    <input type='number' min='0' max='59' name='sec' data-timer-id='2' value='' placeholder='sec' style='width: 55px;' />
+
+                    <button type='button' class='uk-button timer-btn-clear' data-timer-id='2' style='margin-right: 20px;'><i class='uk-icon-times'></i></button>
+
+                    <button type='button' class='timer-btn-start uk-button' data-timer-id='2'>Start</button>
+                    <button type='button' class='timer-btn-stop uk-button' data-timer-id='2'>Stop</button>
+                </form>
+            </div>
+
+        </div>
+
+        <script src="https://cdn.socket.io/socket.io-1.3.4.js"></script>
+        <script src="http://cdn.jfosnight.net:3000/js/howler.min.js"></script>
+
+        <script>
+        var socket = io.connect('', {
+            //timeout: 10,
+            //interval: 5,
+        });
+        var timers = [];
+        var alarm = new Howl({urls:['http://cdn.jfosnight.net:3000/audio/196106__aiwha__ding.wav']});
+
+        //io.set("heartbeat timeout", 10);
+        //io.set("heartbeat interval", 5);
+
+        //console.log(io.timeout);
+        //socket.timeout(5000);
+        //console.log(timers);
+
+        /*function displayTime(id, time){
+
+            var hr = '0';
+            var min = '0';
+            var sec = '0';
+
+            if(time >= 3600){
+                hr = Math.floor(time / 60);
+                time = time % 60;
+            }
+            if(time >= 60){
+                min = Math.floor(time / 60);
+                time = time % 60;
+            }
+            sec = time;
+
+            if(hr < 10){
+                hr = '0' + hr;
+            }
+            if(min < 10){
+                min = '0' + min;
+            }
+            if(sec < 10){
+                sec = '0' + sec;
+            }
+
+            var text = hr + ":" + min + ":" + sec;
+
+            $(".timer[data-timer-id='" + id + "']").text(text);
+        }*/
+
+        socket.on('timer time', function(data){
+            displayTime(data.id, data.time);
+        });
+
+        socket.on('timer end', function(data){
+            var id = data.id;
+            alarm.play();
+            $.UIkit.notify('Timer ' + id + ' ended!');
+        });
+
+        socket.on('timer sync', function(data){
+            //console.log(data);
+            var id = data.id;
+            if(timers[id] !== undefined){
+                timers[id].setTime(data.time);
+            } else {
+                timers[id] = new Timer({id: data.id, time: data.time});
+                timers[id].start();
+            }
+            //console.log(timers);
+        });
+
+        socket.on('connect', function(){
+            console.log("User is connected");
+        });
+
+        socket.on('disconnect', function(){
+            console.log("User was disconnected");
+        });
+
+        socket.on('reconnect', function(number){
+            console.log("User has reconnected");
+        });
+
+        function clearInput(id){
+            $("[name='min'][data-timer-id='" + id + "']").val('');
+            $("[name='sec'][data-timer-id='" + id + "']").val('');
+        }
+
+        $(document).ready(function(){
+            $('.timer-btn-start').on('click', function(){
+                var id = $(this).attr('data-timer-id');
+                //var time = $(".timer-length[data-timer-id='" + id + "']").val();
+
+                var min = Number($("[name='min'][data-timer-id='" + id + "']").val());
+                var sec = Number($("[name='sec'][data-timer-id='" + id + "']").val());
+
+                var time = min * 60 + sec;
+
+                clearInput(id);
+
+                //console.log(min * 60 + sec);
+
+
+                socket.emit('timer start', {id: id, time: time});
+            });
+
+            $('.timer-btn-clear').on('click', function(){
+                var id = $(this).attr('data-timer-id');
+                clearInput(id);
+            });
+
+            $('.timer-btn-stop').on('click', function(){
+                var id = $(this).attr('data-timer-id');
+                //console.log(id);
+                //console.log(timers);
+                //if(timers[id] !== undefined){
+                //    timers[id].stop();
+                //    console.log('Stoping Timer');
+                //}
+
+                socket.emit('timer stop', {id: id});
+
+            });
+
+            socket.emit('timer sync', {id: 1});
+            socket.emit('timer sync', {id: 2});
+        });
+
+        var Timer = function(options){
+            var id = options.id;
+            var time = options.time;
+            var timer;
+
+            //console.log(options);
+
+            function start(){
+                //console.log('starting countdown');
+                //console.log(time);
+                displayTime(time);
+                timer = setInterval(tick, 1000);
+            }
+
+            function tick(){
+                //console.log(time);
+                if(time > 0){
+                    time--;
+                    displayTime(time);
+                } else {
+                    stop();
+                }
+            }
+
+            function stop(){
+                time = 0;
+                clearInterval(timer);
+            }
+
+            function setTime(t1){
+                //stop();
+                clearInterval(timer);
+                time = t1;
+                start();
+            }
+
+            function displayTime(time){
+                var hr = '0';
+                var min = '0';
+                var sec = '0';
+
+                if(time >= 3600){
+                    hr = Math.floor(time / 3600);
+                    time = time % 3600;
+                }
+                if(time >= 60){
+                    min = Math.floor(time / 60);
+                    time = time % 60;
+                }
+                sec = time;
+
+                if(hr < 10){
+                    hr = '0' + hr;
+                }
+                if(min < 10){
+                    min = '0' + min;
+                }
+                if(sec < 10){
+                    sec = '0' + sec;
+                }
+
+                var text = hr + ":" + min + ":" + sec;
+
+                $(".timer[data-timer-id='" + id + "']").text(text);
+            }
+
+            this.start = start;
+            this.stop = stop;
+            this.setTime = setTime;
+        };
+        </script>
+
+    </body>
+</html>

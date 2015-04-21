@@ -1,0 +1,22 @@
+{
+  "name": "mongo-skin-test",
+  "version": "0.0.1",
+  "description": "Testing Mongoskin",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.12.3",
+    "express": "^4.11.1",
+    "express-subdomain": "^1.0.3",
+    "formidable": "^1.0.17",
+    "mongodb": "^1.4.35",
+    "mongoskin": "^1.4.13",
+    "node-tesseract": "^0.2.6",
+    "sharp": "^0.9.3",
+    "socket.io": "^1.3.5"
+  }
+}

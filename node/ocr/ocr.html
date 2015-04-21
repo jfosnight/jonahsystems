@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>JFosnight - OCR</title>
+
+    <link rel="stylesheet" href="http://cdn.jfosnight.net:3000/css/jquery.Jcrop.min.css" type="text/css"/>
+    <script src="http://cdn.jfosnight.net:3000/js/jquery.min.js"></script>
+    <script src="http://cdn.jfosnight.net:3000/js/jquery.Jcrop.min.js"></script>
+    <style>
+        #form-image{
+          max-width: 1000px;
+          max-height: 750px;
+          width: auto;
+          height: auto;
+        }
+    </style>
+
+    <link rel="stylesheet" href="http://cdn.jfosnight.net:3000/css/uikit.almost-flat.min.css"/>
+    <script src="http://cdn.jfosnight.net:3000/js/uikit.min.js"></script>
+  </head>
+  <body style="padding:30px;">
+    <form method='POST' action='/ocr' enctype='multipart/form-data' id='imageForm' class="uk-form">
+      <!-- <input type='text' name='name' placeholder='Name'/><br /> -->
+      <input type='hidden' name='x' id='x' />
+      <input type='hidden' name='y' id='y' />
+      <input type='hidden' name='x2' id='x2' />
+      <input type='hidden' name='y2' id='y2' />
+      <input type='hidden' name='w' id='w' />
+      <input type='hidden' name='h' id='h' />
+
+
+      <input type='file' name='image' id='image'/><br />
+      <br />
+      <button type='submit' class="uk-button uk-button-primary">Submit</button>
+    </form>
+
+    <br />
+
+    <div class="uk-progress uk-progress-small" style="display:none;">
+      <div class="uk-progress-bar" id="upload-progress"></div>
+    </div>
+
+    <!-- <div class="">
+
+    </div> -->
+    <br />
+    <div id="result">
+
+    </div>
+    <br />
+
+    <div id='img-container'>
+
+    </div>
+
+    <script>
+      $(function(){
+        $("[name='image']").on('change', handleFileSelect);
+        $("#imageForm").on('submit', submitForm);
+      });
+
+      function showCoords(c){
+        $('#x').val(c.x);
+        $('#y').val(c.y);
+        $('#x2').val(c.x2);
+        $('#y2').val(c.y2);
+        $('#w').val(c.w);
+        $('#h').val(c.h);
+      }
+
+      function handleFileSelect(event){
+
+          var files = event.target.files;
+          console.log(files);
+          if(files[0]){
+              var f = files[0];
+              if(!f.type.match('image.*')){
+                  return;
+              }
+              var reader = new FileReader();
+
+              $("#img-container").html("<img id='form-image'/>");
+
+              reader.onload = (function(theFile){
+                  return function(e){
+
+                      $("#form-image").attr('src', e.target.result);
+                      $("#form-image").attr('title', escape(theFile.name));
+
+                      $("#form-image").on('load', function(){
+                          var width = $("#form-image")[0].naturalWidth;
+                          var height = $("#form-image")[0].naturalHeight;
+
+                          $('#form-image').Jcrop({
+                              onSelect: showCoords,
+                              trueSize: [width, height]
+                          });
+
+                      });
+                  };
+              })(f);
+
+              reader.readAsDataURL(f);
+          }
+      }
+
+      function submitForm(event){
+        event.preventDefault();
+        var formData = new FormData($(this)[0]);
+        console.log(formData);
+
+        $.ajax({
+          type: "POST",
+          url: "/ocr",
+          data: formData,
+          contentType: false,
+          processData: false,
+          error: function(xhr, ajaxOptions, thrownError){
+            console.log(xhr);
+            console.log(ajaxOptions);
+            console.log(thrownError);
+          },
+          xhr: function(){
+            var xhr = new window.XMLHttpRequest();
+            //Download progress
+            xhr.upload.addEventListener("progress", function(event){
+              if(event.lengthComputable){
+                var percentComplete = event.loaded / event.total;
+                $("#upload-progress").css("width", Math.round(percentComplete * 100, 0) + "%");
+                if(percentComplete == 1){
+                  displayLoading();
+                }
+              }
+            });
+
+            xhr.addEventListener("progress", function(event){
+              if(event.lengthComputable){
+                var percentComplete = event.loaded / event.total;
+                $("#upload-progress").text(percentComplete);
+              }
+            });
+            return xhr;
+          },
+          beforeSend: function(){
+            $(".uk-progress").show();
+          },
+          complete: function(){
+            $(".uk-progress").hide();
+            $(".uk-progress-bar").css("width", 0);
+          },
+          success: function(response){
+            //$("#result").html(response);
+            console.log(response);
+
+            var x = response.content;
+            x = x.replace(/\u21B5/g, '\n');
+            console.log(x);
+            var content = x.split("\n");
+            console.log(content);
+            var html = "";
+            html += "<ul>";
+            for(var i in content){
+                var line = content[i];
+                if(line.length !== 0){
+                    html += "<li>";
+                    html += line;
+                    html += "</li>";
+                }
+            }
+            html += "</ul>";
+
+            $("#result").html(html);
+          }
+        });
+      }
+
+      function displayLoading(){
+        $("#result").html("Please Wait... Processing Image <i class='uk-icon-circle-o-notch uk-icon-spin'></i>");
+      }
+    </script>
+  </body>
+</html>
