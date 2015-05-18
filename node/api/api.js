@@ -1,5 +1,6 @@
 var express = require('express');
 var bodyParser = require('body-parser');
+var moment = require('moment');
 
 
 //////////////////////
@@ -33,6 +34,7 @@ apiRoute.get('/sensor', function(req, res){
 apiRoute.get('/sensor/:id', function(req, res){
     var sensorId = Number(req.params.id);
 
+
     db.sensors.find({sensorId: sensorId}).toArray(function(err, items){
         if(err) return res.send(err);
 
@@ -42,7 +44,8 @@ apiRoute.get('/sensor/:id', function(req, res){
 
 apiRoute.get('/sensor/:id/data', function(req, res){
     var sensorId = Number(req.params.id);
-    db.sensorData.find({sensorId:sensorId}).toArray(function(err, items){
+
+    db.sensorData.find({sensorId:sensorId, timestamp:{ $gt: moment().subtract(1, 'day').toDate() } }).toArray(function(err, items){
         if(err) return res.send(err);
 
         return res.json(items);

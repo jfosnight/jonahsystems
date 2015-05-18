@@ -1,0 +1,261 @@
+<!doctype html>
+<html>
+    <head>
+        <title>JFosnight Systems</title>
+
+        <link rel="stylesheet" href="http://cdn.jfosnight.net:3000/css/uikit.almost-flat.min.css" />
+        <link rel="stylesheet" href="http://cdn.jfosnight.net:3000/css/notify.almost-flat.min.css" />
+
+        <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+        <script src="http://cdn.jfosnight.net:3000/js/uikit.min.js"></script>
+        <script src="http://cdn.jfosnight.net:3000/js/notify.min.js"></script>
+
+
+        <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.2/moment.min.js"></script>
+        <script src="http://cdn.jfosnight.net:3000/js/Chart.min.js"></script>
+
+        <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+        <style>
+        #content{
+            max-width: 1200px;
+            margin: auto;
+        }
+        td ul{
+            margin: 0;
+        }
+        </style>
+    </head>
+    <body>
+      <br />
+      <br />
+        <div id='content'>
+            <div class='uk-grid'>
+                <div id='sensor-list' class='uk-width-1-2'>
+                    List of Available Sensors
+                </div>
+                <div class='uk-width-1-2'>
+                    <div id='sensor-data'>Show the data from the selected sensor</div>
+                    <div id="linechart_material" ></div><!--style="width: 100%; height:400px;"-->
+                    <div id='pressure_chart'></div>
+                </div>
+            </div>
+        </div>
+        <script type="text/javascript">
+            google.load('visualization', '1.1', {packages: ['line']});
+            //google.setOnLoadCallback(drawChart);
+
+            // function drawChart() {
+            //
+            //   var data = new google.visualization.DataTable();
+            //   data.addColumn('datetime', 'Time');
+            //   data.addColumn('number', 'Temperature');
+            //   //data.addColumn('number', 'Temperature');
+            //
+            // //   data.addRows([
+            // //       [new Date('2015-04-24T04:44:12.941Z'),78.1403598651886],
+            // //       [new Date('2015-04-24T04:44:28.471Z'),78.1346791267395],
+            // //       [new Date('2015-04-24T04:44:43.899Z'),78.14023899841308]
+            // //     // [1,  37.8, 80.8, 41.8],
+            // //     // [2,  30.9, 69.5, 32.4],
+            // //     // [3,  25.4,   57, 25.7],
+            // //     // [4,  11.7, 18.8, 10.5],
+            // //     // [5,  11.9, 17.6, 10.4],
+            // //     // [6,   8.8, 13.6,  7.7],
+            // //     // [7,   7.6, 12.3,  9.6],
+            // //     // [8,  12.3, 29.2, 10.6],
+            // //     // [9,  16.9, 42.9, 14.8],
+            // //     // [10, 12.8, 30.9, 11.6],
+            // //     // [11,  5.3,  7.9,  4.7],
+            // //     // [12,  6.6,  8.4,  5.2],
+            // //     // [13,  4.8,  6.3,  3.6],
+            // //     // [14,  4.2,  6.2,  3.4]
+            // //   ]);
+            //
+            //   data.addRows(chartData);
+            //
+            //   var options = {
+            //     chart: {
+            //       title: 'Box Office Earnings in First Two Weeks of Opening',
+            //       subtitle: 'in millions of dollars (USD)'
+            //     },
+            //     width: 900,
+            //     height: 500
+            //   };
+            //
+            //   var chart = new google.charts.Line(document.getElementById('linechart_material'));
+            //
+            //   chart.draw(data, options);
+            // }
+
+            function drawNewChart(chartData){
+                var data = new google.visualization.DataTable();
+                data.addColumn('datetime', 'Time');
+                data.addColumn('number', 'Temperature');
+                data.addRows(chartData);
+
+                var options = {
+                  chart: {
+                    title: 'Temperature of Bedroom',
+                    subtitle: 'over 24 hrs',
+                  },
+                  width: 900,
+                  height: 500,
+                };
+
+                var chart = new google.charts.Line(document.getElementById('linechart_material'));
+
+                chart.draw(data, options);
+              }
+
+              function drawPressureChart(chartData){
+                  var data = new google.visualization.DataTable();
+                  data.addColumn('datetime', 'Time');
+                  data.addColumn('number', 'Pressure');
+                  data.addRows(chartData);
+
+                  var options = {
+                      width: 900,
+                      height: 500,
+                      //vAxis: {format: '#,###.##'},
+                  };
+                  var chart = new google.charts.Line($("#pressure_chart")[0]);
+
+                  chart.draw(data, options);
+              }
+        </script>
+        <script>
+            $(document).ready(function(){
+                getSensors();
+            });
+
+            var headerTitles = {
+                temperature: "Temperature",
+                pressure: "Pressure",
+                humidity: "Humidity",
+                windSpeed: "Wind Speed",
+            };
+
+            function getSensors(){
+                $.ajax({
+                    url: "http://api.jfosnight.net:3000/sensor/",
+                    success: function(response){
+                        sessionStorage.sensors = JSON.stringify(response);
+                        var html = "";
+
+                        var rows = [];
+                        for(var i in response){
+                            var sensor = response[i];
+                            var types = '<ul>';
+                            for(var j in sensor.sensors){
+                                types += "<li>" + sensor.sensors[j] + "</li>";
+                            }
+                            types += "</ul>";
+
+                            rows.push([
+                                "<button class='sensor-btn uk-button uk-button-primary uk-button-mini' data-sensor-id='" + sensor.sensorId + "'>Select</button>",
+                                sensor.name,
+                                sensor.location,
+                                types
+                            ]);
+
+                        }
+
+                        html += buildTable(rows, ['', 'Name', 'Location', 'Sensor Types']);
+                        $("#sensor-list").html(html);
+                        $(".sensor-btn").on('click', getSensorData);
+                    },
+                    error: function(error){
+                        console.log(error);
+                    }
+                });
+            }
+
+            function getSensorData(event){
+                var sensorId = Number($(this).attr('data-sensor-id'));
+                var sensors = JSON.parse(sessionStorage.sensors);
+                var sensor = null;
+                for(var i in sensors){
+                    if(sensors[i].sensorId === sensorId){
+                        sensor = sensors[i];
+                    }
+                }
+
+                $.ajax({
+                    url: "http://api.jfosnight.net:3000/sensor/" + sensorId + "/data",
+                    success: displaySensorData,
+                    error: function(error){
+                        console.log(error);
+                    },
+                    sensor: sensor
+                });
+            }
+
+            // var chartData = [
+            //     [new Date(), 77.1]
+            // ];
+
+            function displaySensorData(response){
+                if(response.length === 0){
+                    $("#sensor-data").html("No Data Logged");
+                    return;
+                }
+
+                var headers = ['Timestamp'];
+                for(var j in this.sensor.sensors){
+                    if(this.sensor.sensors[j] in headerTitles){
+                        headers.push( headerTitles[ this.sensor.sensors[j] ] );
+                    } else {
+                        headers.push( this.sensor.sensors[j] );
+                    }
+                }
+
+                var rows = [];
+                var chartData = [];
+                var pressureData = [];
+                for(var i in response){
+                    var data = response[i];
+                    var row = [];
+                    //row.push( moment(data.timestamp).format("MMM Do YYYY [at] hh:mm:ss A") );
+                    row.push(data.timestamp);
+                    for(var k in this.sensor.sensors){
+                        row.push(data[ this.sensor.sensors[k] ]);
+                    }
+                    rows.push(row);
+                    chartData.push([
+                        new Date(data.timestamp),
+                        data.temperature
+                    ]);
+                    pressureData.push([
+                        new Date(data.timestamp),
+                        data.pressure
+                    ]);
+                }
+                drawNewChart(chartData);
+                drawPressureChart(pressureData);
+                //$("#sensor-data").html(buildTable(rows, headers));
+
+            }
+
+            function buildTable(rows, headers){
+                var table = "";
+                table += "<table class='uk-table uk-table-striped uk-table-hover'>";
+                table += "<thead>";
+                for(var i in headers){
+                    table += "<th>" + headers[i] + "</th>";
+                }
+                table += "</thead>";
+
+                for(i in rows){
+                    table += "<tr>";
+                    for(var j in rows[i]){
+                        table += "<td>" + rows[i][j] + "</td>";
+                    }
+                    table += "</tr>";
+                }
+
+                return table;
+            }
+        </script>
+  </body>
+</html>

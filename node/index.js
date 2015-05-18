@@ -32,6 +32,18 @@ app.get('/', function(req, res){
     res.sendFile(__dirname + '/index.html');
 });
 
+app.get('/sensor', function(req, res){
+    res.sendFile(__dirname + '/sensor/sensor.html');
+});
+
+app.get('/weather', function(req, res){
+    res.sendFile(__dirname + '/weather/weather.html');
+});
+
+app.get('/tank', function(req, res){
+    res.sendFile(__dirname + '/tank/tank.html');
+});
+
 http.listen(3000, function(){
     console.log("Listening on port 3000");
 });

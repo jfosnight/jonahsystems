@@ -13,6 +13,7 @@
     "express": "^4.11.1",
     "express-subdomain": "^1.0.3",
     "formidable": "^1.0.17",
+    "moment": "^2.10.2",
     "mongodb": "^1.4.35",
     "mongoskin": "^1.4.13",
     "node-tesseract": "^0.2.6",
