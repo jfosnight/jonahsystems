@@ -54,7 +54,8 @@
             function drawChart(chartData, chartOptions){
                 var data = new google.visualization.DataTable();
                 data.addColumn('datetime', '');
-                data.addColumn('number', '');
+                data.addColumn('number', 'Sensor 1');
+                data.addColumn('number', 'Sensor 2');
                 data.addRows(chartData);
 
                 var formatter = new google.visualization.NumberFormat({fractionDigits: 2});
@@ -80,11 +81,17 @@
                 getSensor1();
             });
 
+            var sensor1Data = [];
+            var sensor2Data = [];
 
             function getSensor1(){
                 $.ajax({
                     url: "http://api.jfosnight.net:3000/sensor/3/data",
-                    success: displayData,
+					dataType: 'json',
+                    success: function(response){
+                        sensor1Data = response;
+                        displayData();
+                    },
                     error: function(error){
                         console.log(error);
                         $("#data").html(error.responseText);
@@ -92,19 +99,39 @@
                 });
             }
 
-            function displayData(response){
-                if(response.length === 0){
-                    $("#sensor-data").html("No Data Logged");
-                    return;
-                }
+            function getSensor2(){
+                $.ajax({
+                    url: "http://api.jfosnight.net:3000/sensor/4/data",
+					dataType: 'json',
+                    success: displayData,
+                    success: function(response){
+                        sensor2Data = response;
+                        displayData();
+                    }
+                    error: function(error){
+                        console.log(error);
+                        $("#data").html(error.responseText);
+                    },
+                });
+            }
+
+            function displayData(){
+                // if(response.length === 0){
+                //     $("#data").html("No Data Logged");
+                //     return;
+                // }
+
+
+
                 var temperatureData = [];
                 var humidityData = [];
                 var data = null;
-                for(var i in response){
-                    data = response[i];
+                for(var i in sensor1Data){
+                    data = sensor1Data[i];
+
                     temperatureData.push([
                         new Date(data.timestamp),
-                        data.temperature
+                        data.temperature,
                     ]);
 
                     humidityData.push([
@@ -112,6 +139,18 @@
                         data.humidity
                     ]);
                 }
+
+                for(var i in sensor2Data){
+                    data = sensor2Data[i];
+
+                    temperatureData.forEach(function(d){
+                        if( moment(d[0]).subtract({seconds: 15}) < moment(data.timestampt) && moment(d[0]).add({seconds: 15}) > moment(data.timestamp) ){
+                            d.push(data.temperature);
+                        }
+                    })
+
+                }
+
                 var html = "";
                 html += "<h2>Temperature</h2>";
                 html += "<h3>" + Math.round(data.temperature * 100) / 100 + " F</h3>";
@@ -122,6 +161,8 @@
                 html += "Updated " + moment(data.timestamp).format("h:mm:ss a") + "<br />";
 
                 $("#data").html(html);
+
+                console.log(temperatureData);
 
                 drawChart(temperatureData, {target: "#chart-temperature", title: "Temperature Data (F)"});
                 drawChart(humidityData, {target: "#chart-humidity", title: "Humidity Data (rH)"});
