@@ -2,7 +2,6 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var moment = require('moment');
 
-
 //////////////////////
 //////   API  ////////
 //////////////////////
@@ -18,7 +17,6 @@ db.bind('sensorData');
 // Setup Routes
 var apiRoute = express.Router();
 var jsonParser = bodyParser.json();
-
 
 apiRoute.get('/', function(req, res){
     res.send("Landing Page for API");
@@ -49,6 +47,82 @@ apiRoute.get('/sensor/:id/data', function(req, res){
         if(err) return res.send(err);
 
         return res.json(items);
+    });
+});
+
+apiRoute.get('/sensor/:id/data-compact', function(req, res){
+    var sensorId = Number(req.params.id);
+
+    db.sensorData.find({sensorId:sensorId, timestamp:{ $gt: moment().subtract(1, 'day').toDate() } }).toArray(function(err, items){
+        if(err) return res.send(err);
+
+        var startTime = moment().subtract(1, 'day');
+        var buckets = {};
+        for(var i in items){
+            var item = items[i];
+            var time = moment(item.timestamp);
+            var date = time.format('YYYY-MM-DD');
+            var hour = time.hour();
+            //console.log(time.minute() + time.second() * (1/60));
+            var minute = Math.round(  (time.minute() + time.second() * (1/60) ) / 5) * 5;
+
+            if(minute === 60){
+                minute = 0;
+                if(hour === 23){
+                    hour = 0;
+                    date = moment(date).add({day: 1}).format("YYYY-MM-DD");
+                } else {
+                    hour += 1;
+                }
+            }
+
+            if(buckets[date] && buckets[date][hour] && buckets[date][hour][minute]){
+                buckets[date][hour][minute].push(item);
+            } else {
+                if(!buckets[date]){
+                    buckets[date] = {};
+                }
+                if(!buckets[date][hour]){
+                    buckets[date][hour] = {};
+                }
+                if(!buckets[date][hour][minute]){
+                    buckets[date][hour][minute] = [item];
+                }
+            }
+        }
+
+        var finalData = [];
+        for(var day in buckets){
+            for(var hour in buckets[day]){
+                for(var min in buckets[day][hour]){
+                    var bucket = buckets[day][hour][min];
+                    var count = 0;
+                    var data = {};
+                    for(var i in bucket){
+                        var item = bucket[i];
+                        count++;
+                        for(var name in item){
+                            if(name === "_id" || name === "sensorId" || name === "timestamp"){
+                                continue;
+                            }
+                            if(data[name]){
+                                data[name] += item[name];
+                            } else {
+                                data[name] = item[name];
+                            }
+                        }
+                    }
+
+                    for(var i in data){
+                        data[i] = data[i] / count;
+                    }
+                    data.timestamp = moment(day).hour(hour).minute(min).toJSON();
+                    finalData.push(data);
+                }
+            }
+        }
+
+        return res.json(finalData);
     });
 });
 

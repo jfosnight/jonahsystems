@@ -1,8 +1,8 @@
 var express = require('express');
-var subdomain = require('express-subdomain');
-
-var api = require('./api/api.js');
-var cdn = require('./cdn/cdn.js');
+// var subdomain = require('express-subdomain');
+//
+// var api = require('./api/api.js');
+// var cdn = require('./cdn/cdn.js');
 
 var ocr = require('./ocr/ocr.js');
 var timer = require('./timer/timer.js');
@@ -22,8 +22,8 @@ app.use(function(req, res, next) {
   next();
 });
 
-app.use(subdomain('api', api));
-app.use(subdomain('cdn', cdn));
+// app.use(subdomain('api', api));
+// app.use(subdomain('cdn', cdn));
 app.use('/ocr', ocr);
 app.use('/timer', timer.router);
 
@@ -44,8 +44,8 @@ app.get('/tank', function(req, res){
     res.sendFile(__dirname + '/tank/tank.html');
 });
 
-http.listen(3000, function(){
-    console.log("Listening on port 3000");
+http.listen(8001, function(){
+    console.log("Listening on port 8001");
 });
 
 timer.start(io);
