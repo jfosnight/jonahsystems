@@ -3,16 +3,16 @@
     <head>
         <title>JFosnight Systems</title>
 
-        <link rel="stylesheet" href="http://cdn.jfosnight.net:3000/css/uikit.almost-flat.min.css" />
-        <link rel="stylesheet" href="http://cdn.jfosnight.net:3000/css/notify.almost-flat.min.css" />
+        <link rel="stylesheet" href="http://cdn.jfosnight.com/css/uikit.almost-flat.min.css" />
+        <link rel="stylesheet" href="http://cdn.jfosnight.com/css/components/notify.almost-flat.min.css" />
 
         <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
-        <script src="http://cdn.jfosnight.net:3000/js/uikit.min.js"></script>
-        <script src="http://cdn.jfosnight.net:3000/js/notify.min.js"></script>
+        <script src="http://cdn.jfosnight.com/js/uikit.min.js"></script>
+        <script src="http://cdn.jfosnight.com/js/components/notify.min.js"></script>
 
 
         <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.2/moment.min.js"></script>
-        <script src="http://cdn.jfosnight.net:3000/js/Chart.min.js"></script>
+        <!-- <script src="http://cdn.jfosnight.com/js/Chart.min.js"></script> -->
 
         <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 
@@ -51,11 +51,17 @@
         <script type="text/javascript">
             google.load('visualization', '1.1', {packages: ['corechart']});
 
-            function drawChart(chartData, chartOptions){
+            function drawChart(chartData, chartOptions, columns){
                 var data = new google.visualization.DataTable();
                 data.addColumn('datetime', '');
-                data.addColumn('number', 'Sensor 1');
-                data.addColumn('number', 'Sensor 2');
+
+                for(var i in columns){
+                    var column = columns[i];
+
+                    data.addColumn(column.type, column.name);
+                }
+                //data.addColumn('number', 'Sensor 1');
+                //data.addColumn('number', 'Sensor 2');
                 data.addRows(chartData);
 
                 var formatter = new google.visualization.NumberFormat({fractionDigits: 2});
@@ -79,6 +85,7 @@
         <script>
             $(document).ready(function(){
                 getSensor1();
+                // getSensor2();
             });
 
             var sensor1Data = [];
@@ -86,7 +93,7 @@
 
             function getSensor1(){
                 $.ajax({
-                    url: "http://api.jfosnight.net:3000/sensor/3/data",
+                    url: "http://api.jfosnight.com/sensor/3/data",
 					dataType: 'json',
                     success: function(response){
                         sensor1Data = response;
@@ -99,21 +106,21 @@
                 });
             }
 
-            function getSensor2(){
-                $.ajax({
-                    url: "http://api.jfosnight.net:3000/sensor/4/data",
-					dataType: 'json',
-                    success: displayData,
-                    success: function(response){
-                        sensor2Data = response;
-                        displayData();
-                    }
-                    error: function(error){
-                        console.log(error);
-                        $("#data").html(error.responseText);
-                    },
-                });
-            }
+            // function getSensor2(){
+            //     $.ajax({
+            //         url: "http://api.jfosnight.com/sensor/4/data",
+			// 		dataType: 'json',
+            //         success: displayData,
+            //         success: function(response){
+            //             sensor2Data = response;
+            //             displayData();
+            //         },
+            //         error: function(error){
+            //             console.log(error);
+            //             $("#data").html(error.responseText);
+            //         },
+            //     });
+            // }
 
             function displayData(){
                 // if(response.length === 0){
@@ -131,7 +138,7 @@
 
                     temperatureData.push([
                         new Date(data.timestamp),
-                        data.temperature,
+                        data.temperature
                     ]);
 
                     humidityData.push([
@@ -140,16 +147,21 @@
                     ]);
                 }
 
-                for(var i in sensor2Data){
-                    data = sensor2Data[i];
-
-                    temperatureData.forEach(function(d){
-                        if( moment(d[0]).subtract({seconds: 15}) < moment(data.timestampt) && moment(d[0]).add({seconds: 15}) > moment(data.timestamp) ){
-                            d.push(data.temperature);
-                        }
-                    })
-
-                }
+                // for(var i in sensor2Data){
+                //     data2 = sensor2Data[i];
+                //
+                //     temperatureData.forEach(function(d){
+                //         if( moment(d[0]).add({seconds: 15}) > moment(data2.timestamp) ){  //moment(d[0]).subtract({seconds: 15}) < moment(data2.timestamp) &&
+                //             d[2] = data2.temperature;
+                //         }
+                //     });
+                //
+                //     humidityData.forEach(function(d){
+                //         if( moment(d[0]).add({seconds: 15}) > moment(data2.timestamp) ){  //moment(d[0]).subtract({seconds: 15}) < moment(data2.timestamp) &&
+                //             d[2] = data2.humidity;
+                //         }
+                //     })
+                // }
 
                 var html = "";
                 html += "<h2>Temperature</h2>";
@@ -162,10 +174,8 @@
 
                 $("#data").html(html);
 
-                console.log(temperatureData);
-
-                drawChart(temperatureData, {target: "#chart-temperature", title: "Temperature Data (F)"});
-                drawChart(humidityData, {target: "#chart-humidity", title: "Humidity Data (rH)"});
+                drawChart(temperatureData, {target: "#chart-temperature", title: "Temperature Data (F)"}, [{type: "number", name:"Sensor 1"}]); //, {type: "number", name:"Sensor 2"}
+                drawChart(humidityData, {target: "#chart-humidity", title: "Humidity Data (rH)"}, [{type: "number", name: ""}]); //, {type: "number", name: ""}
             }
 
 
